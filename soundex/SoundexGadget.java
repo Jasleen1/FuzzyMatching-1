@@ -16,6 +16,7 @@ public class SoundexGadget extends Gadget {
 	private Wire[] five_soundex_map;
 	private Wire[] six_soundex_map;
 
+	private Wire zero_val;
 	private Wire one_val;
 	private Wire two_val;
 	private Wire three_val;
@@ -23,18 +24,26 @@ public class SoundexGadget extends Gadget {
 	private Wire five_val;
 	private Wire six_val;
 
-	private Wire[] tmp_output;
+
+	private Wire h_val;
+	private Wire w_val;
+
+	private Wire[] circuit_output;
 
 
 	public SoundexGadget(Wire[] a, Wire[] b, String... desc) {
 		super(desc);
 
+		zero_val = zero_val;
 		one_val = generator.createConstantWire(1, "Constant Wire with value 1");
 		two_val = generator.createConstantWire(2, "Constant Wire with value 2");
 		three_val = generator.createConstantWire(3, "Constant Wire with value 3");
 		four_val = generator.createConstantWire(4, "Constant Wire with value 4");
 		five_val = generator.createConstantWire(5, "Constant Wire with value 5");
 		six_val = generator.createConstantWire(6, "Constant Wire with value 6");
+
+		h_val = generator.createConstantWire(72, "Constant Wire with value H");
+		w_val = generator.createConstantWire(87, "Constant Wire with value W");
 
 		one_soundex_map = generator.createConstantWireArray(new long[]{66, 70, 80, 86}, "Letters Mapping to 1");
 		two_soundex_map = generator.createConstantWireArray(new long[]{67, 71, 74, 75, 81, 83, 88, 90}, "Letters Mapping to 2");
@@ -51,29 +60,29 @@ public class SoundexGadget extends Gadget {
 	private void buildCircuit() {
 		Wire[] a_output = transform(a);
 		Wire[] b_output = transform(b);
-		tmp_output = new Wire[9];
-		tmp_output[8] = generator.getOneWire();
+		circuit_output = new Wire[9];
+		circuit_output[8] = generator.getOneWire();
 		for (int i = 0; i < 4; i++) {
-			tmp_output[8] = a_output[i].isEqualTo(b_output[i]).and(tmp_output[8]);
+			circuit_output[8] = a_output[i].isEqualTo(b_output[i]).and(circuit_output[8]);
 		}
 		for (int i = 0; i < 4; i++) {
-			tmp_output[i] = a_output[i];
+			circuit_output[i] = a_output[i];
 		}
 		for (int i = 0; i < 4; i++) {
-			tmp_output[i+4] = b_output[i];
+			circuit_output[i+4] = b_output[i];
 		}
 	}
 
 	private Wire[] transform(Wire[] input) {
 		Wire[] output = new Wire[4];
 		output[0] = input[0];
-		Wire j_wire_index = generator.getZeroWire();
+		Wire j_wire_index = zero_val;
 		generator.addDebugInstruction(j_wire_index, "j_wire_index");
 		for (int i = 1; i < 4; i++) {
-			output[i] = generator.getZeroWire();
+			output[i] = zero_val;
 			Wire output_i_not_set = generator.getOneWire();
 			generator.addDebugInstruction(output_i_not_set, "output_i_not_set: output[" + i + "] not set");
-			Wire increase_j_wire_index = generator.getOneWire(); // can we increase_j_wire_index
+			Wire increase_j_wire_index = generator.getOneWire(); // can we increase j_wire_index
 			generator.addDebugInstruction(increase_j_wire_index, "can we increase_j_wire_index");
 			for (int j = 1; j < input.length; j++) {
 				Wire j_wire = generator.createConstantWire((long)j, "j_wire");
@@ -83,21 +92,18 @@ public class SoundexGadget extends Gadget {
 				Wire letter_at_j_not_used = j_wire.isGreaterThan(j_wire_index, 128, "j_wire >= j_wire_index"); //TODO what should bitWidth be
 				generator.addDebugInstruction(letter_at_j_not_used, "letter_at_j_not_used: j_wire >= j_wire_index");
 
-				Wire letter_at_j_is_not_duplicate = input[j-1].isEqualTo(input[j]).isEqualTo(generator.getZeroWire());
+				Wire letter_at_j_is_not_duplicate = input[j-1].isEqualTo(input[j]).isEqualTo(zero_val);
 				int j1 = j-1;
 				generator.addDebugInstruction(letter_at_j_is_not_duplicate, "letter_at_j_is_not_duplicate input[" + j1 + "] == input[" + j + "]");
 
-				Wire h_val = generator.createConstantWire(72, "Constant Wire with value H");
-				Wire w_val = generator.createConstantWire(87, "Constant Wire with value W");
-
 				Wire output_i_min_1_is_one = output[i-1].isEqualTo(one_val)
-																		.or(output[i-1].isEqualTo(one_soundex_map[0])
-																				.or(output[i-1].isEqualTo(one_soundex_map[1]))
-																				.or(output[i-1].isEqualTo(one_soundex_map[2]))
-																				.or(output[i-1].isEqualTo(one_soundex_map[3])));
+						.or(output[i-1].isEqualTo(one_soundex_map[0])
+								.or(output[i-1].isEqualTo(one_soundex_map[1]))
+								.or(output[i-1].isEqualTo(one_soundex_map[2]))
+								.or(output[i-1].isEqualTo(one_soundex_map[3])));
 				int i1 = i-1;
 				generator.addDebugInstruction(output_i_min_1_is_one, "output_i_min_1_is_one: output[" +i1+ "] = 1");
-				Wire no_one_hw_one = output_i_min_1_is_one.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(generator.getZeroWire());
+				Wire no_one_hw_one = output_i_min_1_is_one.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(zero_val);
 				generator.addDebugInstruction(no_one_hw_one, "no_one_hw_one no patter found");
 				Wire update_output_cond_one = no_one_hw_one.and(letter_at_j_not_used).and(letter_at_j_is_not_duplicate);
 				output[i] = eval_for_one(output[i], output_i_not_set, update_output_cond_one, input[j], i, j);
@@ -105,16 +111,16 @@ public class SoundexGadget extends Gadget {
 				generator.addDebugInstruction(output_i_not_set, "output_i_not_set: output[" + i + "] not set");
 
 				Wire output_i_min_1_is_two = output[i-1].isEqualTo(two_val)
-																		.or(output[i-1].isEqualTo(two_soundex_map[0])
-																				.or(output[i-1].isEqualTo(two_soundex_map[1]))
-																				.or(output[i-1].isEqualTo(two_soundex_map[2]))
-																				.or(output[i-1].isEqualTo(two_soundex_map[3]))
-																				.or(output[i-1].isEqualTo(two_soundex_map[4]))
-																				.or(output[i-1].isEqualTo(two_soundex_map[5]))
-																				.or(output[i-1].isEqualTo(two_soundex_map[6]))
-																				.or(output[i-1].isEqualTo(two_soundex_map[7])));
+						.or(output[i-1].isEqualTo(two_soundex_map[0])
+								.or(output[i-1].isEqualTo(two_soundex_map[1]))
+								.or(output[i-1].isEqualTo(two_soundex_map[2]))
+								.or(output[i-1].isEqualTo(two_soundex_map[3]))
+								.or(output[i-1].isEqualTo(two_soundex_map[4]))
+								.or(output[i-1].isEqualTo(two_soundex_map[5]))
+								.or(output[i-1].isEqualTo(two_soundex_map[6]))
+								.or(output[i-1].isEqualTo(two_soundex_map[7])));
 				generator.addDebugInstruction(output_i_min_1_is_two, "output_i_min_1_is_two: output[" + i1 + "] = 2");
-				Wire no_two_hw_two = output_i_min_1_is_two.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(generator.getZeroWire());
+				Wire no_two_hw_two = output_i_min_1_is_two.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(zero_val);
 				generator.addDebugInstruction(no_two_hw_two, "no_two_hw_two no patter found");
 				Wire update_output_cond_two = no_two_hw_two.and(letter_at_j_not_used).and(letter_at_j_is_not_duplicate);
 				output[i] = eval_for_two(output[i], output_i_not_set, update_output_cond_two, input[j], i, j);
@@ -122,10 +128,9 @@ public class SoundexGadget extends Gadget {
 				generator.addDebugInstruction(output_i_not_set, "output_i_not_set: output[" + i + "] not set");
 
 				Wire output_i_min_1_is_three = output[i-1].isEqualTo(three_val)
-																		.or(output[i-1].isEqualTo(three_soundex_map[0])
-																				.or(output[i-1].isEqualTo(three_soundex_map[1])));
+						.or(output[i-1].isEqualTo(three_soundex_map[0]).or(output[i-1].isEqualTo(three_soundex_map[1])));
 				generator.addDebugInstruction(output_i_min_1_is_three, "output_i_min_1_is_three: output[" + i1 + "] = 3");
-				Wire no_three_hw_three = output_i_min_1_is_three.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(generator.getZeroWire());
+				Wire no_three_hw_three = output_i_min_1_is_three.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(zero_val);
 				generator.addDebugInstruction(no_three_hw_three, "no_three_hw_three no patter found");
 				Wire update_output_cond_three = no_three_hw_three.and(letter_at_j_not_used).and(letter_at_j_is_not_duplicate);
 				output[i] = eval_for_three(output[i], output_i_not_set, update_output_cond_three, input[j], i, j);
@@ -134,7 +139,7 @@ public class SoundexGadget extends Gadget {
 
 				Wire output_i_min_1_is_four = output[i-1].isEqualTo(four_val).or(output[i-1].isEqualTo(four_soundex_map[0]));
 				generator.addDebugInstruction(output_i_min_1_is_four, "output_i_min_1_is_four: output[" + i1 + "] = 4");
-				Wire no_four_hw_four = output_i_min_1_is_four.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(generator.getZeroWire());
+				Wire no_four_hw_four = output_i_min_1_is_four.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(zero_val);
 				generator.addDebugInstruction(no_four_hw_four, "no_four_hw_four no patter found");
 				Wire update_output_cond_four = no_four_hw_four.and(letter_at_j_not_used).and(letter_at_j_is_not_duplicate);
 				output[i] = eval_for_four(output[i], output_i_not_set, update_output_cond_four, input[j], i, j);
@@ -142,10 +147,9 @@ public class SoundexGadget extends Gadget {
 				generator.addDebugInstruction(output_i_not_set, "output_i_not_set: output[" + i + "] not set");
 
 				Wire output_i_min_1_is_five = output[i-1].isEqualTo(five_val)
-																		.or(output[i-1].isEqualTo(five_soundex_map[0])
-																				.or(output[i-1].isEqualTo(five_soundex_map[1])));
+						.or(output[i-1].isEqualTo(five_soundex_map[0]).or(output[i-1].isEqualTo(five_soundex_map[1])));
 				generator.addDebugInstruction(output_i_min_1_is_five, "output_i_min_1_is_five: output[" + i1 + "] = 5");
-				Wire no_five_hw_five = output_i_min_1_is_five.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(generator.getZeroWire());
+				Wire no_five_hw_five = output_i_min_1_is_five.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(zero_val);
 				generator.addDebugInstruction(no_five_hw_five, "no_five_hw_five no patter found");
 				Wire update_output_cond_five = no_five_hw_five.and(letter_at_j_not_used).and(letter_at_j_is_not_duplicate);
 				output[i] = eval_for_five(output[i], output_i_not_set, update_output_cond_five, input[j], i, j);
@@ -154,7 +158,7 @@ public class SoundexGadget extends Gadget {
 
 				Wire output_i_min_1_is_six = output[i-1].isEqualTo(six_val).or(output[i-1].isEqualTo(six_soundex_map[0]));
 				generator.addDebugInstruction(output_i_min_1_is_six, "output_i_min_1_is_six: output[" + i1 + "] = 6");
-				Wire no_six_hw_six = output_i_min_1_is_six.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(generator.getZeroWire());
+				Wire no_six_hw_six = output_i_min_1_is_six.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(zero_val);
 				generator.addDebugInstruction(no_six_hw_six, "no_six_hw_six no patter found");
 				Wire update_output_cond_six = no_six_hw_six.and(letter_at_j_not_used).and(letter_at_j_is_not_duplicate);
 				output[i] = eval_for_six(output[i], output_i_not_set, update_output_cond_six, input[j], i, j);
@@ -214,13 +218,13 @@ public class SoundexGadget extends Gadget {
 		generator.addDebugInstruction(letter_at_j_is_Z, "input[" + j + "] == 90 (Z)");
 
 		Wire letter_at_j_is_2 = letter_at_j_is_C
-														.or(letter_at_j_is_G)
-														.or(letter_at_j_is_J)
-														.or(letter_at_j_is_K)
-														.or(letter_at_j_is_Q)
-														.or(letter_at_j_is_S)
-														.or(letter_at_j_is_X)
-														.or(letter_at_j_is_Z);
+				.or(letter_at_j_is_G)
+				.or(letter_at_j_is_J)
+				.or(letter_at_j_is_K)
+				.or(letter_at_j_is_Q)
+				.or(letter_at_j_is_S)
+				.or(letter_at_j_is_X)
+				.or(letter_at_j_is_Z);
 		generator.addDebugInstruction(letter_at_j_is_2, "letter_at_j_is_2: input[" + j + "] = C | G | J | K | Q | S | X | Z");
 		Wire will_set_output_i_to_2 = output_i_not_set.and(letter_at_j_is_2).and(update_output_cond).and(two_val, "Set output[" + i + "] to 2");
 		generator.addDebugInstruction(will_set_output_i_to_2, "will_set_output_i_to_3");
@@ -242,6 +246,8 @@ public class SoundexGadget extends Gadget {
 		generator.addDebugInstruction(will_set_output_i_to_3, "will_set_output_i_to_3");
 
 		output = will_set_output_i_to_3.orBitwise(output, 128);
+		generator.addDebugInstruction(output, "output[" + i + "] = output_i_not_set & letter_at_j_is_3 & update_output_cond -> 3");
+
 		return output;
 	}
 
@@ -294,6 +300,6 @@ public class SoundexGadget extends Gadget {
 
 	@Override
 	public Wire[] getOutputWires() {
-		return tmp_output;
+		return circuit_output;
 	}
 }

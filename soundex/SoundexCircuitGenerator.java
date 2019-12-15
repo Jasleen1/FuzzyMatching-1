@@ -32,7 +32,7 @@ public class SoundexCircuitGenerator extends CircuitGenerator {
 
   @Override
   public void generateSampleInput(CircuitEvaluator circuitEvaluator) {
-    String string_a = "BCIDV"; // 67 80 68
+    String string_a = "BCIDV";
     String string_b = "ALMRX";
     for (int i = 0; i < dimension; i++) {
       int int_a = string_a.charAt(i);

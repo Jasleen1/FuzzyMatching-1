@@ -6,28 +6,45 @@ import circuit.structure.CircuitGenerator;
 
 public class SoundexGadget extends Gadget {
 
+	/** First input word */
 	private Wire[] a;
+	/** Second input word */
 	private Wire[] b;
 
+	/** List of letters that map to 1 */
 	private Wire[] one_soundex_map;
+	/** List of letters that map to 2 */
 	private Wire[] two_soundex_map;
+	/** List of letters that map to 3 */
 	private Wire[] three_soundex_map;
+	/** List of letters that map to 4 */
 	private Wire[] four_soundex_map;
+	/** List of letters that map to 5 */
 	private Wire[] five_soundex_map;
+	/** List of letters that map to 6 */
 	private Wire[] six_soundex_map;
 
+	/** Wire with value 0 */
 	private Wire zero_val;
+	/** Wire with value 1 */
 	private Wire one_val;
+	/** Wire with value 2 */
 	private Wire two_val;
+	/** Wire with value 3 */
 	private Wire three_val;
+	/** Wire with value 4 */
 	private Wire four_val;
+	/** Wire with value 5 */
 	private Wire five_val;
+	/** Wire with value 6 */
 	private Wire six_val;
 
-
+	/** Wire with letter H */
 	private Wire h_val;
+	/** Wire with letter W */
 	private Wire w_val;
 
+	/** Ouput of circuit */
 	private Wire[] circuit_output;
 
 
@@ -46,12 +63,14 @@ public class SoundexGadget extends Gadget {
 		h_val = generator.createConstantWire(72, "Constant Wire with value H");
 		w_val = generator.createConstantWire(87, "Constant Wire with value W");
 
-		one_soundex_map = generator.createConstantWireArray(new long[]{66, 70, 80, 86}, "Letters Mapping to 1");
-		two_soundex_map = generator.createConstantWireArray(new long[]{67, 71, 74, 75, 81, 83, 88, 90}, "Letters Mapping to 2");
-		three_soundex_map = generator.createConstantWireArray(new long[]{68, 84}, "Letters Mapping to 3");
-		four_soundex_map = generator.createConstantWireArray(new long[]{76}, "Letters Mapping to 4");
-		five_soundex_map = generator.createConstantWireArray(new long[]{77, 78}, "Letters Mapping to 5");
-		six_soundex_map = generator.createConstantWireArray(new long[]{82}, "Letters Mapping to 6");
+		//Contain ASCII encoding for Capital letters
+		//Mappings from rule 2. https://en.wikipedia.org/wiki/Soundex#American_Soundex
+		one_soundex_map = generator.createConstantWireArray(new long[]{66, 70, 80, 86}, "Letters Mapping to 1: B, F, P, V");
+		two_soundex_map = generator.createConstantWireArray(new long[]{67, 71, 74, 75, 81, 83, 88, 90}, "Letters Mapping to 2: C, G, J, K, Q, S, X, Z");
+		three_soundex_map = generator.createConstantWireArray(new long[]{68, 84}, "Letters Mapping to 3: D, T");
+		four_soundex_map = generator.createConstantWireArray(new long[]{76}, "Letters Mapping to 4: L");
+		five_soundex_map = generator.createConstantWireArray(new long[]{77, 78}, "Letters Mapping to 5: M, N");
+		six_soundex_map = generator.createConstantWireArray(new long[]{82}, "Letters Mapping to 6: R");
 
 		this.a = a;
 		this.b = b;
@@ -64,8 +83,11 @@ public class SoundexGadget extends Gadget {
 		circuit_output = new Wire[9];
 		circuit_output[8] = generator.getOneWire();
 		for (int i = 0; i < 4; i++) {
+			//Check soundex code for a and b match
 			circuit_output[8] = a_output[i].isEqualTo(b_output[i]).and(circuit_output[8]);
 		}
+
+		//store soundex codes in output
 		for (int i = 0; i < 4; i++) {
 			circuit_output[i] = a_output[i];
 		}
@@ -74,12 +96,27 @@ public class SoundexGadget extends Gadget {
 		}
 	}
 
+	/**
+	 * Transform takes in Wire array representing a word and returns Wire array
+	 * with the Soundex code
+	 * @param input Wire array representation of input string
+	 * @return Wire array representation of soundex code
+	 */
 	private Wire[] transform(Wire[] input) {
+		 //all soundex codes are len 4
+		//rule 4 from https://en.wikipedia.org/wiki/Soundex#American_Soundex
 		Wire[] output = new Wire[4];
+
+		//first letter always kept
+		//rule 1 from https://en.wikipedia.org/wiki/Soundex#American_Soundex
 		output[0] = input[0];
-		Wire j_wire_index = zero_val;
+
+		Wire j_wire_index = zero_val; //highest index of the input word that has been translated
 		generator.addDebugInstruction(j_wire_index, "j_wire_index");
 		for (int i = 1; i < 4; i++) {
+
+			//default value is 0
+			//rule 1 and 4 from https://en.wikipedia.org/wiki/Soundex#American_Soundex
 			output[i] = zero_val;
 			Wire output_i_not_set = generator.getOneWire();
 			generator.addDebugInstruction(output_i_not_set, "output_i_not_set: output[" + i + "] not set");
@@ -95,7 +132,7 @@ public class SoundexGadget extends Gadget {
 
 				Wire letter_at_j_is_not_duplicate = input[j-1].isEqualTo(input[j]).isEqualTo(zero_val);
 				int j1 = j-1;
-				generator.addDebugInstruction(letter_at_j_is_not_duplicate, "letter_at_j_is_not_duplicate input[" + j1 + "] == input[" + j + "]");
+				generator.addDebugInstruction(letter_at_j_is_not_duplicate, "letter_at_j_is_not_duplicate input[" + j1 + "] != input[" + j + "]");
 
 				Wire output_i_min_1_is_one = output[i-1].isEqualTo(one_val)
 						.or(output[i-1].isEqualTo(one_soundex_map[0])
@@ -103,7 +140,9 @@ public class SoundexGadget extends Gadget {
 								.or(output[i-1].isEqualTo(one_soundex_map[2]))
 								.or(output[i-1].isEqualTo(one_soundex_map[3])));
 				int i1 = i-1;
-				generator.addDebugInstruction(output_i_min_1_is_one, "output_i_min_1_is_one: output[" +i1+ "] = 1");
+				generator.addDebugInstruction(output_i_min_1_is_one, "output_i_min_1_is_one: output[" +i1+ "] == 1");
+				//checking for two letters with the same number separated by 'H' or 'W'
+				//rule 3. from https://en.wikipedia.org/wiki/Soundex#American_Soundex
 				Wire no_one_hw_one = output_i_min_1_is_one.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(zero_val);
 				generator.addDebugInstruction(no_one_hw_one, "no_one_hw_one no patter found");
 				Wire update_output_cond_one = no_one_hw_one.and(letter_at_j_not_used).and(letter_at_j_is_not_duplicate);
@@ -120,7 +159,7 @@ public class SoundexGadget extends Gadget {
 								.or(output[i-1].isEqualTo(two_soundex_map[5]))
 								.or(output[i-1].isEqualTo(two_soundex_map[6]))
 								.or(output[i-1].isEqualTo(two_soundex_map[7])));
-				generator.addDebugInstruction(output_i_min_1_is_two, "output_i_min_1_is_two: output[" + i1 + "] = 2");
+				generator.addDebugInstruction(output_i_min_1_is_two, "output_i_min_1_is_two: output[" + i1 + "] == 2");
 				Wire no_two_hw_two = output_i_min_1_is_two.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(zero_val);
 				generator.addDebugInstruction(no_two_hw_two, "no_two_hw_two no patter found");
 				Wire update_output_cond_two = no_two_hw_two.and(letter_at_j_not_used).and(letter_at_j_is_not_duplicate);
@@ -130,7 +169,7 @@ public class SoundexGadget extends Gadget {
 
 				Wire output_i_min_1_is_three = output[i-1].isEqualTo(three_val)
 						.or(output[i-1].isEqualTo(three_soundex_map[0]).or(output[i-1].isEqualTo(three_soundex_map[1])));
-				generator.addDebugInstruction(output_i_min_1_is_three, "output_i_min_1_is_three: output[" + i1 + "] = 3");
+				generator.addDebugInstruction(output_i_min_1_is_three, "output_i_min_1_is_three: output[" + i1 + "] == 3");
 				Wire no_three_hw_three = output_i_min_1_is_three.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(zero_val);
 				generator.addDebugInstruction(no_three_hw_three, "no_three_hw_three no patter found");
 				Wire update_output_cond_three = no_three_hw_three.and(letter_at_j_not_used).and(letter_at_j_is_not_duplicate);
@@ -139,7 +178,7 @@ public class SoundexGadget extends Gadget {
 				generator.addDebugInstruction(output_i_not_set, "output_i_not_set: output[" + i + "] not set");
 
 				Wire output_i_min_1_is_four = output[i-1].isEqualTo(four_val).or(output[i-1].isEqualTo(four_soundex_map[0]));
-				generator.addDebugInstruction(output_i_min_1_is_four, "output_i_min_1_is_four: output[" + i1 + "] = 4");
+				generator.addDebugInstruction(output_i_min_1_is_four, "output_i_min_1_is_four: output[" + i1 + "] == 4");
 				Wire no_four_hw_four = output_i_min_1_is_four.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(zero_val);
 				generator.addDebugInstruction(no_four_hw_four, "no_four_hw_four no patter found");
 				Wire update_output_cond_four = no_four_hw_four.and(letter_at_j_not_used).and(letter_at_j_is_not_duplicate);
@@ -149,7 +188,7 @@ public class SoundexGadget extends Gadget {
 
 				Wire output_i_min_1_is_five = output[i-1].isEqualTo(five_val)
 						.or(output[i-1].isEqualTo(five_soundex_map[0]).or(output[i-1].isEqualTo(five_soundex_map[1])));
-				generator.addDebugInstruction(output_i_min_1_is_five, "output_i_min_1_is_five: output[" + i1 + "] = 5");
+				generator.addDebugInstruction(output_i_min_1_is_five, "output_i_min_1_is_five: output[" + i1 + "] == 5");
 				Wire no_five_hw_five = output_i_min_1_is_five.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(zero_val);
 				generator.addDebugInstruction(no_five_hw_five, "no_five_hw_five no patter found");
 				Wire update_output_cond_five = no_five_hw_five.and(letter_at_j_not_used).and(letter_at_j_is_not_duplicate);
@@ -158,7 +197,7 @@ public class SoundexGadget extends Gadget {
 				generator.addDebugInstruction(output_i_not_set, "output_i_not_set: output[" + i + "] not set");
 
 				Wire output_i_min_1_is_six = output[i-1].isEqualTo(six_val).or(output[i-1].isEqualTo(six_soundex_map[0]));
-				generator.addDebugInstruction(output_i_min_1_is_six, "output_i_min_1_is_six: output[" + i1 + "] = 6");
+				generator.addDebugInstruction(output_i_min_1_is_six, "output_i_min_1_is_six: output[" + i1 + "] == 6");
 				Wire no_six_hw_six = output_i_min_1_is_six.and(input[j-1].isEqualTo(h_val).or(input[j-1].isEqualTo(w_val))).isEqualTo(zero_val);
 				generator.addDebugInstruction(no_six_hw_six, "no_six_hw_six no patter found");
 				Wire update_output_cond_six = no_six_hw_six.and(letter_at_j_not_used).and(letter_at_j_is_not_duplicate);
@@ -181,7 +220,19 @@ public class SoundexGadget extends Gadget {
 		return output;
 	}
 
-	public Wire eval_for_one(Wire output, Wire output_i_not_set, Wire update_output_cond, Wire input, int i, int j){
+	/**
+	 * Calculates the soundex mapping for a character in the input
+	 * 	if mapping should be 1 it returns 1
+	 * 	else returns origin value of output
+	 * @param output Current value of the output
+	 * @param output_i_not_set If the output is set to anything
+	 * @param update_output_cond Combination of various conditions that must be true for output to be able to be updated
+	 * @param input input character to map
+	 * @param i index in output (used for debug statements)
+	 * @param j index in input (used for debug statements)
+	 * @return Wire that the output should be set to
+	 */
+	private Wire eval_for_one(Wire output, Wire output_i_not_set, Wire update_output_cond, Wire input, int i, int j){
 		Wire letter_at_j_is_B = one_soundex_map[0].isEqualTo(input, "input[" + j + "] == 66 (B)");
 		generator.addDebugInstruction(letter_at_j_is_B,  "input[" + j + "] == 66 (B)");
 		Wire letter_at_j_is_F = one_soundex_map[1].isEqualTo(input, "input[" + j + "] == 70 (F)");
@@ -191,16 +242,32 @@ public class SoundexGadget extends Gadget {
 		Wire letter_at_j_is_V = one_soundex_map[3].isEqualTo(input, "input[" + j + "] == 86 (V)");
 		generator.addDebugInstruction(letter_at_j_is_V, "input[" + j + "] == 86 (V)");
 
+		//check if input mapped to B, F, P, or V
 		Wire letter_at_j_is_1 = letter_at_j_is_B.or(letter_at_j_is_F).or(letter_at_j_is_P).or(letter_at_j_is_V);
 		generator.addDebugInstruction(letter_at_j_is_1, "letter_at_j_is_1: input[" + j + "] = B | F | P | V");
 
+		//check if we can update output
 		Wire  will_set_output_i_to_1 = output_i_not_set.and(letter_at_j_is_1).and(update_output_cond).and(one_val, "Set output[" + i + "] to 1");
+		generator.addDebugInstruction(will_set_output_i_to_1, "will_set_output_i_to_1");
+
 		output = will_set_output_i_to_1.orBitwise(output, 128);
 		generator.addDebugInstruction(output, "output[" + i + "] = output_i_not_set & letter_at_j_is_1 & update_output_cond -> 1");
 		return output;
 	}
 
-	public Wire eval_for_two(Wire output, Wire output_i_not_set, Wire update_output_cond, Wire input, int i, int j) {
+	/**
+	 * Calculates the soundex mapping for a character in the input
+	 * 	if mapping should be 2 it returns 2
+	 * 	else returns origin value of output
+	 * @param output Current value of the output
+	 * @param output_i_not_set If the output is set to anything
+	 * @param update_output_cond Combination of various conditions that must be true for output to be able to be updated
+	 * @param input input character to map
+	 * @param i index in output (used for debug statements)
+	 * @param j index in input (used for debug statements)
+	 * @return Wire that the output should be set to
+	 */
+	private Wire eval_for_two(Wire output, Wire output_i_not_set, Wire update_output_cond, Wire input, int i, int j) {
 		Wire letter_at_j_is_C = two_soundex_map[0].isEqualTo(input, "input[" + j + "] == 67 (C)");
 		generator.addDebugInstruction(letter_at_j_is_C, "input[" + j + "] == 67 (C)");
 		Wire letter_at_j_is_G = two_soundex_map[1].isEqualTo(input, "input[" + j + "] == 71 (G)");
@@ -228,14 +295,26 @@ public class SoundexGadget extends Gadget {
 				.or(letter_at_j_is_Z);
 		generator.addDebugInstruction(letter_at_j_is_2, "letter_at_j_is_2: input[" + j + "] = C | G | J | K | Q | S | X | Z");
 		Wire will_set_output_i_to_2 = output_i_not_set.and(letter_at_j_is_2).and(update_output_cond).and(two_val, "Set output[" + i + "] to 2");
-		generator.addDebugInstruction(will_set_output_i_to_2, "will_set_output_i_to_3");
+		generator.addDebugInstruction(will_set_output_i_to_2, "will_set_output_i_to_2");
 
 		output = will_set_output_i_to_2.orBitwise(output, 128);
 		generator.addDebugInstruction(output, "output[" + i + "] = output_i_not_set & letter_at_j_is_2 & update_output_cond -> 2");
 		return output;
 	}
 
-	public Wire eval_for_three(Wire output, Wire output_i_not_set, Wire update_output_cond, Wire input, int i, int j) {
+	/**
+	 * Calculates the soundex mapping for a character in the input
+	 * 	if mapping should be 3 it returns 3
+	 * 	else returns origin value of output
+	 * @param output Current value of the output
+	 * @param output_i_not_set If the output is set to anything
+	 * @param update_output_cond Combination of various conditions that must be true for output to be able to be updated
+	 * @param input input character to map
+	 * @param i index in output (used for debug statements)
+	 * @param j index in input (used for debug statements)
+	 * @return Wire that the output should be set to
+	 */
+	private Wire eval_for_three(Wire output, Wire output_i_not_set, Wire update_output_cond, Wire input, int i, int j) {
 		Wire letter_at_j_is_D = three_soundex_map[0].isEqualTo(input, "input[" + j + "] == 68 (D)");
 		generator.addDebugInstruction(letter_at_j_is_D, "input[" + j + "] == 68 (D)");
 		Wire letter_at_j_is_T = three_soundex_map[1].isEqualTo(input, "input[" + j + "] == 84 (T)");
@@ -252,7 +331,19 @@ public class SoundexGadget extends Gadget {
 		return output;
 	}
 
-	public Wire eval_for_four(Wire output, Wire output_i_not_set, Wire update_output_cond, Wire input, int i, int j) {
+	/**
+	 * Calculates the soundex mapping for a character in the input
+	 * 	if mapping should be 4 it returns 4
+	 * 	else returns origin value of output
+	 * @param output Current value of the output
+	 * @param output_i_not_set If the output is set to anything
+	 * @param update_output_cond Combination of various conditions that must be true for output to be able to be updated
+	 * @param input input character to map
+	 * @param i index in output (used for debug statements)
+	 * @param j index in input (used for debug statements)
+	 * @return Wire that the output should be set to
+	 */
+	private Wire eval_for_four(Wire output, Wire output_i_not_set, Wire update_output_cond, Wire input, int i, int j) {
 		Wire letter_at_j_is_L = four_soundex_map[0].isEqualTo(input, "input[" + j + "] == 76 (L)");
 		generator.addDebugInstruction(letter_at_j_is_L, "input[" + j + "] == 76 (L)");
 
@@ -267,7 +358,19 @@ public class SoundexGadget extends Gadget {
 		return output;
 	}
 
-	public Wire eval_for_five(Wire output, Wire output_i_not_set, Wire update_output_cond, Wire input, int i, int j) {
+	/**
+	 * Calculates the soundex mapping for a character in the input
+	 * 	if mapping should be 5 it returns 5
+	 * 	else returns origin value of output
+	 * @param output Current value of the output
+	 * @param output_i_not_set If the output is set to anything
+	 * @param update_output_cond Combination of various conditions that must be true for output to be able to be updated
+	 * @param input input character to map
+	 * @param i index in output (used for debug statements)
+	 * @param j index in input (used for debug statements)
+	 * @return Wire that the output should be set to
+	 */
+	private Wire eval_for_five(Wire output, Wire output_i_not_set, Wire update_output_cond, Wire input, int i, int j) {
 		Wire letter_at_j_is_M = five_soundex_map[0].isEqualTo(input, "input[" + j + "] == 77 (M)");
 		generator.addDebugInstruction(letter_at_j_is_M, "input[" + j + "] == 77 (M)");
 		Wire letter_at_j_is_N = five_soundex_map[1].isEqualTo(input, "input[" + j + "] == 78 (N)");
@@ -284,7 +387,19 @@ public class SoundexGadget extends Gadget {
 		return output;
 	}
 
-	public Wire eval_for_six(Wire output, Wire output_i_not_set, Wire update_output_cond, Wire input, int i, int j) {
+	/**
+	 * Calculates the soundex mapping for a character in the input
+	 * 	if mapping should be 6 it returns 6
+	 * 	else returns origin value of output
+	 * @param output Current value of the output
+	 * @param output_i_not_set If the output is set to anything
+	 * @param update_output_cond Combination of various conditions that must be true for output to be able to be updated
+	 * @param input input character to map
+	 * @param i index in output (used for debug statements)
+	 * @param j index in input (used for debug statements)
+	 * @return Wire that the output should be set to
+	 */
+	private Wire eval_for_six(Wire output, Wire output_i_not_set, Wire update_output_cond, Wire input, int i, int j) {
 		Wire letter_at_j_is_R = six_soundex_map[0].isEqualTo(input, "input[" + j + "] == 82 (R)");
 		generator.addDebugInstruction(letter_at_j_is_R, "input[" + j + "] == 82 (R)");
 

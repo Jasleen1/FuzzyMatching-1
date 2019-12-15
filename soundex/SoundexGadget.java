@@ -34,7 +34,8 @@ public class SoundexGadget extends Gadget {
 	public SoundexGadget(Wire[] a, Wire[] b, String... desc) {
 		super(desc);
 
-		zero_val = zero_val;
+		//initalize class variables
+		zero_val = generator.getZeroWire();
 		one_val = generator.createConstantWire(1, "Constant Wire with value 1");
 		two_val = generator.createConstantWire(2, "Constant Wire with value 2");
 		three_val = generator.createConstantWire(3, "Constant Wire with value 3");

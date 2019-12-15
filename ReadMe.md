@@ -7,6 +7,7 @@
 
 # Execute Soundex Circuit
 - calculate soundex code for words and output if soundex codes match
+  - https://en.wikipedia.org/wiki/Soundex
 - words must be in all caps with only A-Z
 - output of the circuit will be printed after "OUTPUT OF CIRCUIT:"
 

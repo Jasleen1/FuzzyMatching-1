@@ -25,8 +25,6 @@ ADD precompute/SoundexCircuitGenerator.java /workspace/jsnark/JsnarkCircuitBuild
 ADD precompute/SoundexGadget.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/soundex/SoundexGadget.java
 ADD precompute/data.txt /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/soundex/data.txt
 
-ADD test.sh /workspace/jsnark/JsnarkCircuitBuilder/test.sh
-
 RUN mkdir -p bin
 RUN javac -d bin -cp /usr/share/java/junit4.jar:/bcprov-jdk15on-159.jar  $(find ./src/* | grep ".java$")
 # RUN java -cp bin examples.generators.soundex.SoundexCircuitGenerator

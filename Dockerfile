@@ -17,13 +17,13 @@ RUN mkdir build && cd build && cmake ..
 WORKDIR /workspace/jsnark/libsnark/build
 RUN make
 WORKDIR /workspace/jsnark/JsnarkCircuitBuilder
-ADD soundex/SoundexCircuitGenerator.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/generators/soundex/SoundexCircuitGenerator.java
-ADD soundex/SoundexGadget.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/soundex/SoundexGadget.java
-ADD soundex/Soundex_Test.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/tests/soundex/Soundex_Test.java
+# ADD soundex/SoundexCircuitGenerator.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/generators/soundex/SoundexCircuitGenerator.java
+# ADD soundex/SoundexGadget.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/soundex/SoundexGadget.java
+# ADD soundex/Soundex_Test.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/tests/soundex/Soundex_Test.java
 
-# ADD precompute/SoundexCircuitGenerator.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/generators/soundex/SoundexCircuitGenerator.java
-# ADD precompute/SoundexGadget.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/soundex/SoundexGadget.java
-# ADD precompute/data.txt /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/soundex/data.txt
+ADD precompute/SoundexCircuitGenerator.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/generators/soundex/SoundexCircuitGenerator.java
+ADD precompute/SoundexGadget.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/soundex/SoundexGadget.java
+ADD precompute/data.txt /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/soundex/data.txt
 
 ADD test.sh /workspace/jsnark/JsnarkCircuitBuilder/test.sh
 

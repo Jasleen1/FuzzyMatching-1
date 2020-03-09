@@ -26,7 +26,7 @@ public class SoundexCircuitGenerator extends CircuitGenerator {
     data =  Files.readAllLines(Paths.get(dataFile), StandardCharsets.UTF_8);
     // System.out.println(data);
     string_a = inputA;
-    dataLen = data.size()*4;
+    dataLen = data.size();
   }
 
   @Override
@@ -37,19 +37,20 @@ public class SoundexCircuitGenerator extends CircuitGenerator {
     SoundexGadget soundexGadget = new SoundexGadget(a, "Compute Soundex for input a");
     Wire[] aSoundex = soundexGadget.getOutputWires();
     Wire[] result = new Wire[5];
+    Wire joinedSoundex = getZeroWire();
     for (int i = 0; i < 4; i++) {
       result[i] = aSoundex[i];
+      addDebugInstruction(result[i], "result[" + i + "]");
+      if (i < 3)
+        joinedSoundex = aSoundex[i].shiftLeft(32, (3-i)*8).orBitwise(joinedSoundex, 32);
+    }
+    addDebugInstruction(joinedSoundex, "joinedSoundex is");
+    for (int i = 0; i < data.size(); i++) {
+      Wire soundexEq = joinedSoundex.isEqualTo(b[i]);
+      addZeroAssertion(soundexEq);
+      addDebugInstruction(soundexEq, "soundexCode and " + data.get(i) + " are equal");
     }
     result[4] = getZeroWire();
-    for (int i = 0; i < data.size(); i++) {
-      Wire soundexEq = getOneWire();
-      for (int j = 0; j < 4; j++) {
-          Wire lettersEqual = aSoundex[j].isEqualTo(b[i*4 + j]);
-          soundexEq = lettersEqual.and(soundexEq);
-      }
-      // addDebugInstruction(soundexEq, "soundexCode and " + data.get(i) + " are equal");
-      result[4] = soundexEq.or(result[4]);
-    }
 
     makeOutputArray(result, "output of soundex");
   }
@@ -62,21 +63,21 @@ public class SoundexCircuitGenerator extends CircuitGenerator {
     }
 
     for (int i = 0; i < data.size(); i++) {
+      int int_b = 0;
       for (int j = 0; j < 4; j++) {
-        int int_b;
         if (j == 0)
-          int_b = data.get(i).charAt(j);
+          int_b = data.get(i).charAt(j) << ((3-j)*8) | int_b;
         else
-          int_b = Character.getNumericValue(data.get(i).charAt(j));
-        circuitEvaluator.setWireValue(b[i*4 + j], int_b);
+          int_b = (Character.getNumericValue(data.get(i).charAt(j)) << ((3-j)*8)) | int_b;
       }
+      circuitEvaluator.setWireValue(b[i], int_b);
     }
   }
 
   public static void main(String[] args) throws Exception {
     SoundexCircuitGenerator generator;
 
-    int INPUT_LEN = 128;
+    int INPUT_LEN = 256;
     String dataFile = "/workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/soundex/data.txt";
     String inputA = "CAT";
 

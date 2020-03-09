@@ -5,7 +5,7 @@
 
 `docker build -t jsnark .`
 
-# Soundex 
+# Soundex
 Phoenetic encoding algorithm for English pronuncation of names.
 https://en.wikipedia.org/wiki/Soundex#American_Soundex
 
@@ -14,15 +14,21 @@ https://en.wikipedia.org/wiki/Soundex#American_Soundex
 - words must be in all caps with only A-Z
 - output of the circuit will be printed after "OUTPUT OF CIRCUIT:"
 
-`docker run --rm jsnark java -cp bin examples.generators.soundex.SoundexCircuitGenerator <word 1> <word 2>`
+`docker run --rm jsnark java -cp bin examples.generators.soundex.SoundexCircuitGenerator <datafile path> <word 2>`
 
 example:
 
-`docker run --rm jsnark java -cp bin examples.generators.soundex.SoundexCircuitGenerator CAT COT`
+`docker run --rm jsnark java -cp bin examples.generators.soundex.SoundexCircuitGenerator data.txt COT`
+
+## Execute Using JSnark interface
+`docker run --rm jsnark ./../libsnark/build/libsnark/jsnark_interface/run_ppzksnark soundex.arith soundex.in `
+`docker run --rm jsnark ./../libsnark/build/libsnark/jsnark_interface/run_ppzksnark "MiMC Input.arith" "MiMC Input.in" `
 
 ## Run Soundex Tests
 
 `docker run --rm jsnark java -cp bin:/usr/share/java/junit4.jar org.junit.runner.JUnitCore  examples.tests.soundex.Soundex_Test`
+
+`docker run --rm jsnark sh test.sh`
 
 ## Soundex Code
 - [Circuit Generator](soundex/SoundexCircuitGenerator.java)

@@ -36,7 +36,6 @@ public class SoundexCircuitGenerator extends CircuitGenerator {
     b = createInputWireArray(dataLen, "Input b");
     SoundexGadget soundexGadget = new SoundexGadget(a, "Compute Soundex for input a");
     Wire[] aSoundex = soundexGadget.getOutputWires();
-
     Wire[] result = new Wire[5];
     Wire joinedSoundex = getZeroWire();
     for (int i = 0; i < 4; i++) {

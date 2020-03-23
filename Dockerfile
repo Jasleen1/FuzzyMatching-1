@@ -17,9 +17,22 @@ RUN mkdir build && cd build && cmake ..
 WORKDIR /workspace/jsnark/libsnark/build
 RUN make
 WORKDIR /workspace/jsnark/JsnarkCircuitBuilder
-ADD soundex/SoundexCircuitGenerator.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/generators/soundex/SoundexCircuitGenerator.java
-ADD soundex/SoundexGadget.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/soundex/SoundexGadget.java
-ADD soundex/Soundex_Test.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/tests/soundex/Soundex_Test.java
+
+ADD precompute/SoundexCircuitGenerator.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/generators/soundex/SoundexCircuitGenerator.java
+ADD precompute/SoundexGadget.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/soundex/SoundexGadget.java
+ADD precompute/data.txt /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/soundex/data.txt
+
+ADD mimc/MiMCCircuitGenerator.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/generators/mimc/MiMCCircuitGenerator.java
+ADD mimc/MiMCGadget.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/mimc/MiMCGadget.java
+
+RUN mkdir -p bin
+RUN javac -d bin -cp /usr/share/java/junit4.jar:/bcprov-jdk15on-159.jar  $(find ./src/* | grep ".java$")
+
+RUN java -cp bin examples.generators.mimc.MiMCCircuitGenerator 234 2
+
+ADD jubjub/JubJubCircuitGenerator.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/generators/jubjub/JubJubCircuitGenerator.java
+ADD jubjub/JubJubAddGadget.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/jubjub/JubJubAddGadget.java
+ADD jubjub/JubJubMulGadget.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/jubjub/JubJubMulGadget.java
 
 ADD jubjub/JubJubCircuitGenerator.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/generators/jubjub/JubJubCircuitGenerator.java
 ADD jubjub/JubJubAddGadget.java /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/jubjub/JubJubAddGadget.java
@@ -27,6 +40,6 @@ ADD jubjub/JubJubMulGadget.java /workspace/jsnark/JsnarkCircuitBuilder/src/examp
 
 RUN mkdir -p bin
 RUN javac -d bin -cp /usr/share/java/junit4.jar:/bcprov-jdk15on-159.jar  $(find ./src/* | grep ".java$")
-RUN java -cp bin examples.generators.soundex.SoundexCircuitGenerator
-RUN java -cp bin:/usr/share/java/junit4.jar org.junit.runner.JUnitCore  examples.tests.soundex.Soundex_Test
-# RUN java -cp bin examples.generators.soundex.SoundexCircuitGenerator CAT COT
+# RUN java -cp bin examples.generators.soundex.SoundexCircuitGenerator
+# RUN java -cp bin:/usr/share/java/junit4.jar org.junit.runner.JUnitCore  examples.tests.soundex.Soundex_Test
+# RUN java -cp bin examples.generators.soundex.SoundexCircuitGenerator /workspace/jsnark/JsnarkCircuitBuilder/src/examples/gadgets/soundex/data.txt CAT

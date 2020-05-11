@@ -149,16 +149,15 @@ async def laesa(ctx, point, threshold, pivots, points):
         dist = await share_sub_abs(x, threshold)
         pivotRanges.append((dist,x+threshold))
     contenders = [(i, p) for i, p in enumerate(points)]
-    finalcontenders = []
     for j in range(0, len(pivots)):
         lower = pivotRanges[j][0]
         upper = pivotRanges[j][1]
         for (i, p) in contenders:
             cmp1 = await (distMatrix[i][j] < lower).open()
             cmp2 = await (upper < distMatrix[i][j]).open()
-            if cmp1 == 0 or cmp2 == 0:
-                finalcontenders.append(p)
-    for cont in finalcontenders:
+            if not(cmp1 == 0 or cmp2 == 0):
+                contenders.remove((i,p))
+    for _,cont in contenders:
         ld = await levensteinDistance(ctx, point, cont)
         cmpld = await (threshold < ld).open()#ld <= threshold ~ not threshold < ls
         if cmpld == 0:
